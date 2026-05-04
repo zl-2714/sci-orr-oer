@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>折纸结构 3D 可视化（在线版）</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header>
+    <h1>典型折纸结构 3D 可视化（在线版）</h1>
+    <p>左键旋转、滚轮缩放、右键平移。按 <kbd>R</kbd> 重置视角。</p>
+  </header>
+
+  <main>
+    <aside class="panel">
+      <h2>模型</h2>
+      <button data-model="miura">Miura-ori 折纸板</button>
+      <button data-model="waterbomb">Waterbomb 管</button>
+      <button data-model="kresling" class="active">Kresling 折纸筒</button>
+
+      <label for="compression">Kresling 轴向压缩（受力变形）</label>
+      <input id="compression" type="range" min="0" max="100" value="0" />
+      <div class="value">压缩量：<span id="compressionValue">0%</span></div>
+
+      <p class="hint">建议发布到 GitHub Pages 后访问（在线版）。</p>
+    </aside>
+    <section id="viewer"></section>
+  </main>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
