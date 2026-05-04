@@ -16,7 +16,13 @@ body {
 header { padding: 1rem 1.2rem; }
 h1 { margin: 0 0 .3rem; font-size: 1.4rem; }
 p { margin: 0; opacity: .85; }
-main { display: grid; grid-template-columns: 260px 1fr; gap: 1rem; padding: 0 1rem 1rem; height: calc(100vh - 90px); }
+main {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1rem;
+  padding: 0 1rem 1rem;
+  height: calc(100vh - 90px);
+}
 .panel {
   background: color-mix(in oklab, var(--panel), transparent 10%);
   border: 1px solid #2b3550;
@@ -35,6 +41,9 @@ main { display: grid; grid-template-columns: 260px 1fr; gap: 1rem; padding: 0 1r
   cursor: pointer;
 }
 .panel button.active { background: #33406a; border-color: var(--accent); }
+.panel label{display:block;margin:.8rem 0 .3rem;font-size:.9rem}
+.panel input[type="range"]{width:100%}
+.value{font-size:.86rem;opacity:.9;margin:.3rem 0 .7rem}
 .hint { font-size: .9rem; margin-top: .6rem; line-height: 1.4; }
 #viewer {
   border-radius: 14px;

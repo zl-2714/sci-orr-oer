@@ -1,5 +1,5 @@
-import * as THREE from 'https://unpkg.com/three@0.164.1/build/three.module.js';
-import { OrbitControls } from 'https://unpkg.com/three@0.164.1/examples/jsm/controls/OrbitControls.js';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js';
 
 const viewer = document.getElementById('viewer');
 const scene = new THREE.Scene();
@@ -27,9 +27,12 @@ scene.add(grid);
 const modelGroup = new THREE.Group();
 scene.add(modelGroup);
 
-function clearModels() {
-  while (modelGroup.children.length) modelGroup.remove(modelGroup.children[0]);
-}
+const compressionInput = document.getElementById('compression');
+const compressionValue = document.getElementById('compressionValue');
+let currentModel = 'kresling';
+let compression = 0;
+
+function clearModels() { while (modelGroup.children.length) modelGroup.remove(modelGroup.children[0]); }
 
 function addFoldedStrip(width, depth, cols, rows, amp, mat) {
   const geo = new THREE.BufferGeometry();
@@ -63,13 +66,10 @@ function buildMiura() {
   modelGroup.add(sheet);
 }
 
-function buildWaterbombTube() {
+function buildWaterbomb() {
   clearModels();
   const mat = new THREE.MeshStandardMaterial({ color: 0x84e1bc, metalness: 0.15, roughness: 0.45, side: THREE.DoubleSide });
-  const radius = 1.8;
-  const height = 4.8;
-  const seg = 20;
-  const hSeg = 16;
+  const radius = 1.8, height = 4.8, seg = 20, hSeg = 16;
   const geo = new THREE.BufferGeometry();
   const vertices = [];
   const indices = [];
@@ -97,20 +97,24 @@ function buildWaterbombTube() {
   modelGroup.add(new THREE.Mesh(geo, mat));
 }
 
-function buildKresling() {
+function buildKresling(c = 0) {
   clearModels();
   const mat = new THREE.MeshStandardMaterial({ color: 0xb59cff, metalness: 0.25, roughness: 0.35, side: THREE.DoubleSide });
   const h = 5.2, n = 8, levels = 9, r = 1.5;
   const geo = new THREE.BufferGeometry();
   const vertices = [];
   const indices = [];
+  const compressedHeight = h * (1 - 0.55 * c);
+  const maxTwist = Math.PI * (0.95 + 0.9 * c);
+  const bulge = 0.16 + 0.3 * c;
+
   for (let j = 0; j <= levels; j++) {
     const v = j / levels;
-    const twist = v * Math.PI * 0.95;
-    const yy = (v - 0.5) * h;
+    const twist = v * maxTwist;
+    const yy = (v - 0.5) * compressedHeight;
     for (let i = 0; i < n; i++) {
       const angle = (i / n) * Math.PI * 2 + twist;
-      const rr = r + Math.sin((i + j) * Math.PI) * 0.16;
+      const rr = r + Math.sin((i + j) * Math.PI) * bulge;
       vertices.push(Math.cos(angle) * rr, yy, Math.sin(angle) * rr);
     }
   }
@@ -118,9 +122,9 @@ function buildKresling() {
     for (let i = 0; i < n; i++) {
       const a = j * n + i;
       const b = j * n + ((i + 1) % n);
-      const c = (j + 1) * n + i;
+      const c2 = (j + 1) * n + i;
       const d = (j + 1) * n + ((i + 1) % n);
-      indices.push(a, c, b, b, c, d);
+      indices.push(a, c2, b, b, c2, d);
     }
   }
   geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
@@ -129,14 +133,25 @@ function buildKresling() {
   modelGroup.add(new THREE.Mesh(geo, mat));
 }
 
-const builders = { miura: buildMiura, waterbomb: buildWaterbombTube, kresling: buildKresling };
+function renderModel(name) {
+  if (name === 'miura') buildMiura();
+  else if (name === 'waterbomb') buildWaterbomb();
+  else buildKresling(compression);
+}
 
 document.querySelectorAll('button[data-model]').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('button[data-model]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    builders[btn.dataset.model]();
+    currentModel = btn.dataset.model;
+    renderModel(currentModel);
   });
+});
+
+compressionInput.addEventListener('input', () => {
+  compression = Number(compressionInput.value) / 100;
+  compressionValue.textContent = `${compressionInput.value}%`;
+  if (currentModel === 'kresling') renderModel('kresling');
 });
 
 window.addEventListener('keydown', e => {
@@ -155,7 +170,7 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 resize();
-buildKresling();
+renderModel('kresling');
 
 (function animate() {
   requestAnimationFrame(animate);

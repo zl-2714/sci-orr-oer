@@ -3,53 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>折纸结构 3D 可视化（离线版）</title>
-  <style>
-    :root { color-scheme: dark; --bg:#0b0d12; --panel:#131926; --line:#2a3143; --text:#eaf0ff; --accent:#7f9cf5; }
-    *{box-sizing:border-box}
-    body{margin:0;background:radial-gradient(circle at top,#1a2340,var(--bg));color:var(--text);font-family:system-ui,"Noto Sans SC",sans-serif}
-    .wrap{padding:14px} h1{margin:0 0 8px;font-size:32px} .sub{margin:0 0 10px;opacity:.9}
-    .btns{margin-bottom:10px} button{margin-right:8px;margin-bottom:8px;padding:8px 12px;border:1px solid #4b5b86;background:#273452;color:#fff;border-radius:8px;cursor:pointer}
-    button.active{border-color:var(--accent);background:#344977}
-    #viewer{height:76vh;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0a0c11;position:relative}
-    canvas{width:100%;height:100%;display:block}
-  </style>
+  <title>折纸结构 3D 可视化（在线版）</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="wrap">
-    <h1>折纸结构 3D 可视化（离线可用）</h1>
-    <p class="sub">左键拖动旋转，滚轮缩放，右键拖动平移，按 R 重置。</p>
-    <div class="btns">
-      <button id="btn-miura" class="active">Miura-ori</button>
-      <button id="btn-waterbomb">Waterbomb</button>
-      <button id="btn-kresling">Kresling</button>
-    </div>
-    <label for="compression">Kresling 轴向压缩</label>
-    <input id="compression" type="range" min="0" max="100" value="0" /> <span id="compressionValue">0%</span>
-    <div id="viewer"><canvas id="cv"></canvas></div>
-  </div>
-  <script>
-    function rotateX(p,a){const c=Math.cos(a),s=Math.sin(a);return{x:p.x,y:p.y*c-p.z*s,z:p.y*s+p.z*c}}
-    function rotateY(p,a){const c=Math.cos(a),s=Math.sin(a);return{x:p.x*c+p.z*s,y:p.y,z:-p.x*s+p.z*c}}
-    const canvas=document.getElementById('cv'),ctx=canvas.getContext('2d');
-    const state={model:'miura',yaw:0.8,pitch:-0.35,zoom:220,panX:0,panY:0,autoRotate:0.003,compression:0};
-    let vertices=[],edges=[];
+  <header>
+    <h1>典型折纸结构 3D 可视化（在线版）</h1>
+    <p>左键旋转、滚轮缩放、右键平移。按 <kbd>R</kbd> 重置视角。</p>
+  </header>
 
-    function buildMiura(){const v=[],e=[],cols=18,rows=12,W=8,D=5,A=.45;const idx=(r,c)=>r*(cols+1)+c;for(let r=0;r<=rows;r++)for(let c=0;c<=cols;c++){const x=(c/cols-.5)*W,z=(r/rows-.5)*D,y=Math.sin((c+r)*Math.PI)*A;v.push({x,y,z})}for(let r=0;r<=rows;r++)for(let c=0;c<cols;c++)e.push([idx(r,c),idx(r,c+1)]);for(let c=0;c<=cols;c++)for(let r=0;r<rows;r++)e.push([idx(r,c),idx(r+1,c)]);return{v,e}}
-    function buildWaterbomb(){const v=[],e=[],seg=34,hSeg=20,R=1.9,H=5.2;const idx=(y,i)=>y*(seg+1)+i;for(let y=0;y<=hSeg;y++){const vv=y/hSeg,yy=(vv-.5)*H;for(let i=0;i<=seg;i++){const t=i/seg*Math.PI*2,fold=Math.sin((i+y)*Math.PI)*.2,r=R+fold;v.push({x:Math.cos(t)*r,y:yy,z:Math.sin(t)*r})}}for(let y=0;y<=hSeg;y++)for(let i=0;i<seg;i++)e.push([idx(y,i),idx(y,i+1)]);for(let i=0;i<=seg;i++)for(let y=0;y<hSeg;y++)e.push([idx(y,i),idx(y+1,i)]);return{v,e}}
-    function buildKresling(c){const v=[],e=[],n=10,levels=14,H=5.8,R=1.6,ch=H*(1-.55*c),tw=Math.PI*(1.05+1.1*c),bulge=.15+.35*c;const idx=(j,i)=>j*n+i;for(let j=0;j<=levels;j++){const vv=j/levels,yy=(vv-.5)*ch;for(let i=0;i<n;i++){const a=i/n*Math.PI*2+vv*tw,rr=R+Math.sin((i+j)*Math.PI)*bulge;v.push({x:Math.cos(a)*rr,y:yy,z:Math.sin(a)*rr})}}for(let j=0;j<=levels;j++)for(let i=0;i<n;i++)e.push([idx(j,i),idx(j,(i+1)%n)]);for(let j=0;j<levels;j++)for(let i=0;i<n;i++)e.push([idx(j,i),idx(j+1,i)]);return{v,e}}
-    function loadModel(){let m=state.model==='miura'?buildMiura():state.model==='waterbomb'?buildWaterbomb():buildKresling(state.compression);vertices=m.v;edges=m.e}
-    function project(p){let q=rotateX(p,state.pitch);q=rotateY(q,state.yaw);const z=q.z+8,f=state.zoom/Math.max(.2,z);return{x:q.x*f+canvas.width*.5+state.panX,y:-q.y*f+canvas.height*.5+state.panY,z}}
-    function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#0a0c11';ctx.fillRect(0,0,canvas.width,canvas.height);const pv=vertices.map(project);const sorted=edges.map(ed=>({ed,depth:(pv[ed[0]].z+pv[ed[1]].z)/2})).sort((a,b)=>b.depth-a.depth);for(const item of sorted){const [i,j]=item.ed,a=pv[i],b=pv[j],alpha=Math.max(.2,Math.min(.95,1.4/(item.depth*.18)));ctx.strokeStyle=`rgba(170,200,255,${alpha})`;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}}
-    function fit(){const r=canvas.getBoundingClientRect();canvas.width=Math.floor(r.width);canvas.height=Math.floor(r.height)}
-    let dragging=false,right=false,lx=0,ly=0;canvas.oncontextmenu=e=>e.preventDefault();canvas.addEventListener('mousedown',e=>{dragging=e.button===0;right=e.button===2;lx=e.clientX;ly=e.clientY});window.addEventListener('mouseup',()=>{dragging=false;right=false});window.addEventListener('mousemove',e=>{const dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;if(dragging){state.yaw+=dx*.008;state.pitch+=dy*.008}if(right){state.panX+=dx;state.panY+=dy}});canvas.addEventListener('wheel',e=>{e.preventDefault();state.zoom=Math.max(80,Math.min(700,state.zoom*Math.exp(-e.deltaY*.001)))},{passive:false});window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r'){state.yaw=.8;state.pitch=-.35;state.zoom=220;state.panX=0;state.panY=0}});
-    document.getElementById('btn-miura').onclick=()=>{state.model='miura';loadModel();setAct('btn-miura')};
-    document.getElementById('btn-waterbomb').onclick=()=>{state.model='waterbomb';loadModel();setAct('btn-waterbomb')};
-    document.getElementById('btn-kresling').onclick=()=>{state.model='kresling';loadModel();setAct('btn-kresling')};
-    document.getElementById('compression').addEventListener('input',e=>{state.compression=Number(e.target.value)/100;document.getElementById('compressionValue').textContent=`${e.target.value}%`;if(state.model==='kresling')loadModel()});
-    function setAct(id){['btn-miura','btn-waterbomb','btn-kresling'].forEach(x=>document.getElementById(x).classList.toggle('active',x===id))}
-    window.addEventListener('resize',()=>{fit();draw()});
-    fit();loadModel();(function loop(){state.yaw+=state.autoRotate;draw();requestAnimationFrame(loop)})();
-  </script>
+  <main>
+    <aside class="panel">
+      <h2>模型</h2>
+      <button data-model="miura">Miura-ori 折纸板</button>
+      <button data-model="waterbomb">Waterbomb 管</button>
+      <button data-model="kresling" class="active">Kresling 折纸筒</button>
+
+      <label for="compression">Kresling 轴向压缩（受力变形）</label>
+      <input id="compression" type="range" min="0" max="100" value="0" />
+      <div class="value">压缩量：<span id="compressionValue">0%</span></div>
+
+      <p class="hint">建议发布到 GitHub Pages 后访问（在线版）。</p>
+    </aside>
+    <section id="viewer"></section>
+  </main>
+
+  <script type="module" src="main.js"></script>
 </body>
 </html>
